@@ -2,51 +2,60 @@
 
 from typing import Generic, TypeVar, Callable
 
+from random import randrange
+#from timing.timing import timeit
+
 T = TypeVar('T')
 
 class GenericHeap(Generic[T]):
-    def __init__(self, elements:list[T], cmp_func:Callable[[T, T], bool]) -> None:
+    def __init__(self, elements:list[T], _cmp_func:Callable[[T, T], bool]) -> None:
         super().__init__()
-        self.cmp_func = cmp_func
-        self.elements:list[T] = elements
+        self._cmp_func = _cmp_func
+        self._elements:list[T] = elements
         self.fix()
 
     def __str__(self) -> str:
-        return " ".join(str(x) for x in self.elements)
+        return " ".join(str(x) for x in self._elements)
 
-    def __len__(self) -> int:
-        return self.elements.__len__()
+    def len(self) -> int:
+        return self._elements.__len__()
 
     def fix(self) -> None:
-        end:int = len(self.elements) - 1
-        for i in range((len(self.elements) - 2 // 2), -1, -1):
-            self.__sift_down__(i, end)
+        end:int = len(self._elements) - 1
+        for i in range((len(self._elements) - 2 // 2), -1, -1):
+            self._sift_down(i, end)
 
     def push(self, value:T) -> None:
-        self.elements.append(value)
-        self.fix()
+        self._elements.append(value)
+        self._sift_up()
 
-    def pop(self) -> T|None:
-        if len(self.elements) == 0:
-            return None
+    def pop(self) -> T:
+        if len(self._elements) == 0:
+            raise IndexError(f"Array length is 0, unable to pop")
 
-        self.__swap__(0, len(self.elements) - 1)
+        self._swap(0, len(self._elements) - 1)
 
-        element:T = self.elements.pop(-1)
+        element:T = self._elements.pop(-1)
 
-        self.__sift_down__(0, len(self.elements) - 1)
+        self._sift_down(0, len(self._elements) - 1)
 
         return element
 
-    def __sift_up__(self) -> None:
-        child:int = len(self.elements) - 1
+    def get_at_index(self, index:int) -> T:
+        if index < 0 or index >= len(self._elements):
+            raise IndexError(f"Index [{index}] out of bounds. Length: {self._elements.__len__()}")
+
+        return self._elements[index]
+
+    def _sift_up(self) -> None:
+        child:int = len(self._elements) - 1
         parent:int = (child - 1) // 2
-        while child >= 0 and self.cmp_func(self.elements[child], self.elements[parent]):
-            self.__swap__(child, parent)
+        while child >= 0 and self._cmp_func(self._elements[child], self._elements[parent]):
+            self._swap(child, parent)
             child = parent
             parent = (child - 1) // 2
 
-    def __sift_down__(self, curr:int, end:int) -> None:
+    def _sift_down(self, curr:int, end:int) -> None:
         left:int = (curr * 2) + 1
         while left <= end:
             right:int = left + 1
@@ -54,18 +63,18 @@ class GenericHeap(Generic[T]):
                 right = -1
 
             swap:int = left
-            if right != -1 and not self.cmp_func(self.elements[left], self.elements[right]):
+            if right != -1 and not self._cmp_func(self._elements[left], self._elements[right]):
                 swap = right
 
-            if self.cmp_func(self.elements[swap], self.elements[curr]):
-                self.__swap__(swap, curr)
+            if self._cmp_func(self._elements[swap], self._elements[curr]):
+                self._swap(swap, curr)
                 curr = swap
                 left = (curr * 2) + 1
             else:
                 return
 
-    def __swap__(self, i:int, j:int) -> None:
-        self.elements[i], self.elements[j] = self.elements[j], self.elements[i]
+    def _swap(self, i:int, j:int) -> None:
+        self._elements[i], self._elements[j] = self._elements[j], self._elements[i]
 
 
 def cmp(a:int, b:int) -> bool:
@@ -73,51 +82,13 @@ def cmp(a:int, b:int) -> bool:
 
 
 def main() -> None:
-    a:list[int] = [100, 90, 80, 70, 60, 50, 40, 30, 20, 10]
+    a:list[int] = []
     gh:GenericHeap = GenericHeap[int](a, cmp)
 
-    print(f"{gh.pop() = }")
-    print(f"{gh.pop() = }")
-    print(f"{gh.pop() = }")
-    print(f"{gh.pop() = }")
-    print(f"{gh.pop() = }")
-    print(f"{gh.pop() = }")
-    print(f"{gh.pop() = }")
-    print(f"{gh.pop() = }")
-    print(f"{gh.pop() = }")
-    print(f"{gh.pop() = }")
-
-    gh.push(100)
-    print(f"{str(gh) = }")
-    gh.push(50)
-    print(f"{str(gh) = }")
-    gh.push(10)
-    print(f"{str(gh) = }")
-    gh.push(90)
-    print(f"{str(gh) = }")
-    gh.push(80)
-    print(f"{str(gh) = }")
-    gh.push(20)
-    print(f"{str(gh) = }")
-    gh.push(40)
-    print(f"{str(gh) = }")
-    gh.push(70)
-    print(f"{str(gh) = }")
-    gh.push(60)
-    print(f"{str(gh) = }")
-    gh.push(30)
-    print(f"{str(gh) = }")
-
-    print(f"{gh.pop() = }")
-    print(f"{gh.pop() = }")
-    print(f"{gh.pop() = }")
-    print(f"{gh.pop() = }")
-    print(f"{gh.pop() = }")
-    print(f"{gh.pop() = }")
-    print(f"{gh.pop() = }")
-    print(f"{gh.pop() = }")
-    print(f"{gh.pop() = }")
-    print(f"{gh.pop() = }")
+    for _ in range(10000):
+        random_num:int = randrange(1, 10_000)
+        gh.push(random_num)
+        print(f"pushing {random_num}, index at 0: {gh.get_at_index(0)}")
 
 
 if __name__ == "__main__":

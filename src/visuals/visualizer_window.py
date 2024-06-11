@@ -4,7 +4,7 @@ from enum import Enum, auto
 
 from .grid import GridScene, GridView
 from .node import Node, NodeType
-from astar.astar import start_path_finding
+from astar.astar import start_path_finding, start_path_finding_heapq
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QApplication, QHBoxLayout, QLabel, QVBoxLayout, QWidget, QPushButton, QMainWindow
@@ -20,7 +20,6 @@ class State(Enum):
 
 
 class VisualizerWindow(QMainWindow):
-
     def __init__(self, col:int, row:int) -> None:
         super().__init__()
 
@@ -161,7 +160,6 @@ class VisualizerWindow(QMainWindow):
             self._button_node_end_set.setText(f"Setting End Node")
             self._button_node_blocker_set.setText(f"Set Blocker Nodes")
         elif self._state == State.SETTING_BLOCKER:
-            print(f"BLOCKER")
             self._button_node_start_set.setText("Set Start Node")
             self._button_node_end_set.setText("Set End Node")
             self._button_node_blocker_set.setText("Setting Blocker Nodes")
@@ -286,23 +284,28 @@ class VisualizerWindow(QMainWindow):
         blockers = tuple((node.x, node.y) for node in self._blockers)
 
         return_path:tuple[tuple[int, int,], ...]|None = start_path_finding(self._col, self._row, start, end, blockers)
+        #return_path_v2:tuple[tuple[int, int,], ...]|None = start_path_finding_heapq(self._col, self._row, start, end, blockers)
+
         if return_path is None:
             print(f"There is no return path!")
         else:
             self._display_return_path(return_path)
 
     def _display_return_path(self, path:tuple[tuple[int, int], ...]) -> None:
-        print("Return path:")
-        for i in range(len(path) - 1, -1, -1 ):
-            pt:tuple[int, int] = path[i]
-            print(f"{pt[0]} , {pt[1]}")
-            node = self._node_list[pt[1]][pt[0]]
+        # path pts are reverse ordered
+        index:int = 0
+        while index < len(path) - 2:
+            pt_a:tuple[int, int] = path[index]
+            pt_b:tuple[int, int] = path[index + 1]
+
+            node = self._node_list[pt_a[1]][pt_a[0]]
             if node.node_type == NodeType.EMPTY:
-                node.set_node_type(NodeType.PATH)
+                node.set_node_type(NodeType.PATH, pt_b)
                 self._paths.append(node)
 
+            index += 1
+
     def _mouse_click_callback(self, x:int, y:int) -> None:
-        #print(f"mouse_event_click: {x} , {y}")
         node = self._node_list[y][x]
 
         if self._state == State.IDLE:
@@ -341,6 +344,7 @@ class VisualizerWindow(QMainWindow):
                 self._append_blocker_node(node)
             elif node.node_type == NodeType.BLOCKER:
                 self._remove_blocker_node(node)
+
 
 def main() -> None:
     app:QApplication = QApplication(sys.argv)

@@ -3,11 +3,10 @@
 from enum import Enum, auto
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QBrush, QFont
-from PyQt6.QtWidgets import QGraphicsEllipseItem, QGraphicsItem, QGraphicsSimpleTextItem, QGraphicsPolygonItem
+from PyQt6.QtGui import QBrush, QFont, QPen
+from PyQt6.QtWidgets import QGraphicsEllipseItem, QGraphicsItem, QGraphicsLineItem, QGraphicsSimpleTextItem
 
-NODE_SIZE:int = 32
-
+NODE_SIZE:int = 16
 
 class NodeType(Enum):
     EMPTY = auto()
@@ -32,14 +31,14 @@ class Node():
 
         self._dot:QGraphicsEllipseItem = QGraphicsEllipseItem()
         self._text:QGraphicsSimpleTextItem = QGraphicsSimpleTextItem()
-        self._poly:QGraphicsPolygonItem = QGraphicsPolygonItem()
+        self._line:QGraphicsLineItem = QGraphicsLineItem()
 
         self.set_node_type(NodeType.EMPTY)
 
     def get_graphic_item(self) -> tuple[QGraphicsItem, ...]:
-        return (self._dot, self._text, self._poly)
+        return (self._dot, self._text, self._line)
 
-    def set_node_type(self, node_type:NodeType) -> None:
+    def set_node_type(self, node_type:NodeType, target:tuple[int, int,]|None = None) -> None:
         self.node_type = node_type
 
         if self.node_type == NodeType.EMPTY:
@@ -53,7 +52,7 @@ class Node():
 
             self._dot.setVisible(True)
             self._text.setVisible(False)
-            self._poly.setVisible(False)
+            self._line.setVisible(False)
 
         elif self.node_type == NodeType.START:
             self._text.setText("S")
@@ -66,7 +65,7 @@ class Node():
 
             self._dot.setVisible(False)
             self._text.setVisible(True)
-            self._poly.setVisible(False)
+            self._line.setVisible(False)
 
         elif self.node_type == NodeType.END:
             self._text.setText("E")
@@ -79,7 +78,7 @@ class Node():
 
             self._dot.setVisible(False)
             self._text.setVisible(True)
-            self._poly.setVisible(False)
+            self._line.setVisible(False)
 
         elif self.node_type == NodeType.BLOCKER:
             circle_scale = 0.5
@@ -92,22 +91,25 @@ class Node():
 
             self._dot.setVisible(True)
             self._text.setVisible(False)
-            self._poly.setVisible(False)
+            self._line.setVisible(False)
 
         elif self.node_type == NodeType.PATH:
-            circle_scale = 0.3
-            circle_size = NODE_SIZE * circle_scale
-            circle_offset = (NODE_SIZE - circle_size) * 0.5
+            if target is None:
+                return
 
-            self._dot.setBrush(QBrush(Qt.GlobalColor.green))
-            self._dot.setOpacity(0.65)
-            self._dot.setRect(NODE_SIZE * self.x + circle_offset, NODE_SIZE * self.y + circle_offset, circle_size, circle_size)
+            pen:QPen = QPen()
+            pen.setColor(Qt.GlobalColor.green)
+            pen.setWidth(int(NODE_SIZE * 0.35))
 
-            self._dot.setVisible(True)
+            self._line.setLine(NODE_SIZE * (self.x + 0.5), NODE_SIZE * (self.y + 0.5), NODE_SIZE * (target[0] + 0.5), NODE_SIZE * (target[1] + 0.5))
+            self._line.setPen(pen)
+
+            self._dot.setVisible(False)
             self._text.setVisible(False)
-            self._poly.setVisible(False)
+            self._line.setVisible(True)
 
         elif self.node_type == NodeType.PATH_OPEN:
             ...
+
         elif self.node_type == NodeType.PATH_CLOSED:
             ...

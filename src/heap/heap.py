@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
 from typing import Generic, TypeVar, Callable
-
 from random import randrange
-#from timing.timing import timeit
+import heapq
+
+from timing.timing import timeit
 
 T = TypeVar('T')
 
@@ -15,7 +16,7 @@ class GenericHeap(Generic[T]):
         self.fix()
 
     def __str__(self) -> str:
-        return " ".join(str(x) for x in self._elements)
+        return ", ".join(str(x) for x in self._elements)
 
     def len(self) -> int:
         return self._elements.__len__()
@@ -50,7 +51,7 @@ class GenericHeap(Generic[T]):
     def _sift_up(self) -> None:
         child:int = len(self._elements) - 1
         parent:int = (child - 1) // 2
-        while child >= 0 and self._cmp_func(self._elements[child], self._elements[parent]):
+        while child > 0 and self._cmp_func(self._elements[child], self._elements[parent]):
             self._swap(child, parent)
             child = parent
             parent = (child - 1) // 2
@@ -81,15 +82,48 @@ def cmp(a:int, b:int) -> bool:
     return a < b
 
 
+@timeit
 def main() -> None:
     a:list[int] = []
     gh:GenericHeap = GenericHeap[int](a, cmp)
 
-    for _ in range(10000):
-        random_num:int = randrange(1, 10_000)
+    for _ in range(10_000_000):
+        random_num:int = randrange(1, 10_000_000)
         gh.push(random_num)
-        print(f"pushing {random_num}, index at 0: {gh.get_at_index(0)}")
+
+
+@timeit
+def main2() -> None:
+    a:list[int] = []
+    heapq.heapify(a)
+
+    for _ in range(10_000_000):
+        random_num:int = randrange(1, 10_000_000)
+        heapq.heappush(a, random_num)
+
+
+@timeit
+def main3() -> None:
+    print("test")
+    a:list[int] = []
+    heapq.heapify(a)
+
+    b = GenericHeap[int]([], cmp)
+
+    for _ in range(100):
+        rn = randrange(1, 10_000)
+        b.push(rn)
+        heapq.heappush(a, rn)
+
+    for _ in range(100):
+        b.pop()
+        heapq.heappop(a)
+
+        print(a)
+        print(f"[{str(b)}]")
+
+        print(f"{a == b._elements}")
 
 
 if __name__ == "__main__":
-    main()
+    main2()
